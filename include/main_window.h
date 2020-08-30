@@ -3,8 +3,10 @@
 
 #include <QMainWindow>
 
-#include "itask.h"
-#include "itask_control.h"
+#include <queue>
+#include <future>
+
+class ITaskControl;
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -23,6 +25,7 @@ private slots:
     void on_calculate_2_clicked();
 
 private:
-    Ui::MainWindow *mainwindow_;
+    Ui::MainWindow *mainwindow_ = nullptr;
+    ITaskControl *iTaskControl_ = nullptr;
 };
 #endif // MAINWINDOW_H

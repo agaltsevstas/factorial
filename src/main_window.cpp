@@ -1,10 +1,18 @@
+#include <numeric>
+#include <future>
+#include <string>
+#include <mutex>
+
 #include "main_window.h"
 #include "ui_main_window.h"
+#include "itask.hpp"
+#include "itask_control.h"
 #include "logger.h"
 
 MainWindow::MainWindow(QWidget *parent)
-    : QMainWindow(parent)
-    , mainwindow_(new Ui::MainWindow)
+    : QMainWindow(parent),
+      mainwindow_(new Ui::MainWindow),
+      iTaskControl_(new ITaskControl(10))
 {
     mainwindow_->setupUi(this);
 //    connect(button, &Button::leftClicked, this, &MainWindow::addButton); // Отслеживание на нажатие кнопки
@@ -13,6 +21,7 @@ MainWindow::MainWindow(QWidget *parent)
 MainWindow::~MainWindow()
 {
     delete mainwindow_;
+    delete iTaskControl_;
 }
 
 int factorial(int number)
@@ -31,7 +40,7 @@ int factorial(int number)
     }
 }
 
-unsigned int doubleFactorial(int number)
+int doubleFactorial(int number)
 {
     if (number == 0 || number == 1)
     {
@@ -43,15 +52,13 @@ unsigned int doubleFactorial(int number)
 void MainWindow::on_calculate_1_clicked()
 {
     int number = mainwindow_->lineEdit->text().toInt(); // Число
-    Logger::info << "Начало вычисления: " << number << "!" << std::endl;
-    int result = factorial(number);
-    Logger::info << "Конец вычисления: " << number << "! = " << result << std::endl;
+    iTaskControl_->createTask(factorial, number);
 }
 
 void MainWindow::on_calculate_2_clicked()
 {
     int number = mainwindow_->lineEdit->text().toInt(); // Число
-    Logger::info << "Начало вычисления: " << number << "!!" << std::endl;
-    int result = doubleFactorial(number);
-    Logger::info << "Конец вычисления: " << number << "!! = " << result << std::endl;
+    iTaskControl_->createTask(factorial, number);
 }
+
+void taskEnded

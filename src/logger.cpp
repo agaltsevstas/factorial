@@ -27,11 +27,11 @@ void Logger::instance()
     logger_ = new Logger;
     debugLevel_ = DEBUG_LEVEL_INFO;
     
-    fs::path fileName = localTime() + ".log";
-    fs::path directory = "../log/";
-    fs::create_directory(directory); // Проверка на существование каталога. В случае отсутсвия, создается каталог
-    std::string filePath = directory.string() + fileName.string();
-    logFile_.open(filePath);
+//    fs::path fileName = localTime() + ".log";
+//    fs::path directory = "../log/";
+//    fs::create_directory(directory); // Проверка на существование каталога. В случае отсутсвия, создается каталог
+//    std::string filePath = directory.string() + fileName.string();
+//    logFile_.open(filePath);
 }
 
 void Logger::setDebugLevel(Logger::DebugLevel debugLevel)

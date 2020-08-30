@@ -4,7 +4,7 @@ greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 CONFIG += c++17
 CONFIG -= app_bundle
 QMAKE_CXXFLAGS += -std=c++0x
-LIBS += -lstdc++fs
+#LIBS += -lstdc++fs
 
 message("PLATFORM  IDENTITY: " $$QMAKE_HOST.arch)
 
@@ -51,13 +51,12 @@ DEFINES += DEBUG_BUILD
 # GUI files
 INCLUDEPATH += $$PWD/include
 HEADERS += \
-        include/itask.h \
+        include/itask.hpp \
         include/itask_control.h \
         include/logger.h \
         include/main_window.h
 
 SOURCES += \
-        src/itask.cpp \
         src/itask_control.cpp \
         src/logger.cpp \
         src/main.cpp \
