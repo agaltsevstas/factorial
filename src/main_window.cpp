@@ -7,13 +7,12 @@
 #include "main_window.h"
 #include "ui_main_window.h"
 #include "button.h"
-#include "itask.hpp"
-#include "itask_control.h"
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent),
       mainwindow_(new Ui::MainWindow),
       iTaskControl_(new ITaskControl(numberThreads_)),
+      threads_(iTaskControl_->getThreads()),
       timer_ (new QTimer(this)),
       buttons_(numberThreads_)
 {
@@ -27,7 +26,6 @@ MainWindow::MainWindow(QWidget *parent)
         buttons_[i] = button;
         QObject::connect(&*button, &Button::leftClicked, this, &MainWindow::on_button_clicked); // Отслеживание на нажатие кнопки
     }
-    auto threads = iTaskControl_->getThreads();
     QObject::connect(&*timer_, &QTimer::timeout, this, &MainWindow::timerAlarm);               // Отслеживание таймера на наличие хотя бы 1 связи между модулями
 }
 
@@ -38,18 +36,21 @@ MainWindow::~MainWindow()
 
 void MainWindow::on_button_clicked()
 {
-    auto &threads = iTaskControl_->getThreads();
     Button *button = static_cast<Button*>(sender());
     QString name = "Поток " + QString::number(button->getNumber()) + " свободен";
     button->setText(name);
     button->setEnabled(false);
     std::size_t number = button->getNumber();
-    threads[number - 1]->cancel();
+    threads_->at(number - 1)->cancel();
 }
 
-int factorial(int number)
+int factorial(int number, bool &isProcessed)
 {
     std::this_thread::sleep_for(std::chrono::milliseconds(500));
+    if (!isProcessed)
+    {
+        return 1;
+    }
     if(number < 0)
     {
         return 0;
@@ -60,64 +61,74 @@ int factorial(int number)
     }
     else
     {
-        return number * factorial(number - 1);
+        int result = factorial(number - 1, isProcessed);
+        Logger::info << "Промежуточный результат: " << result << std::endl;
+        return number * result;
     }
 }
 
-int doubleFactorial(int number)
+int doubleFactorial(int number, bool &isProcessed)
 {
     std::this_thread::sleep_for(std::chrono::milliseconds(500));
+    if (!isProcessed)
+    {
+        return 1;
+    }
     if (number == 0 || number == 1)
     {
         return 1;
     }
-    return number * doubleFactorial(number - 2);
+    return number * doubleFactorial(number - 2, isProcessed);
 }
 
 void MainWindow::on_calculate_1_clicked()
 {
     int number = mainwindow_->lineEdit->text().toInt(); // Число
-    queue_.push(std::async(factorial, number));
+    std::packaged_task<int(int, bool&)> task(factorial);
+    queue_.push(std::make_tuple(std::move(task), std::move(number), FACTORIAL_1));
 }
 
 void MainWindow::on_calculate_2_clicked()
 {
     int number = mainwindow_->lineEdit_2->text().toInt(); // Число
-    queue_.push(std::async(doubleFactorial, number));
+    std::packaged_task<int(int, bool&)> task(doubleFactorial);
+    queue_.push(std::make_tuple(std::move(task), std::move(number), FACTORIAL_2));
 }
 
 void MainWindow::timerAlarm()
 {
-    auto &threads = iTaskControl_->getThreads();
-
     for (std::size_t i = 0; i < numberThreads_; ++i)
     {
-        if (threads[i] == nullptr && !queue_.empty())
+        if (threads_->at(i) == nullptr && !queue_.empty())
         {
             auto &task = queue_.front();
-            iTaskControl_->createTask(task, i, FACTORIAL_1);
+            iTaskControl_->createTask(task, i);
             queue_.pop();
             QString name = "Отменить поток " + QString::number(buttons_[i]->getNumber());
             buttons_[i]->setText(name);
             buttons_[i]->setEnabled(true);
         }
-        else if (threads[i] != nullptr)
+        else if (threads_->at(i) != nullptr)
         {
-            if (i == 0)
-                int k = 0;
-            if (threads[i]->status() == READY)
+            if (threads_->at(i)->status() == READY)
             {
                 if (!queue_.empty())
                 {
                     auto &task = queue_.front();
-                    iTaskControl_->createTask(task, i, FACTORIAL_1);
+                    iTaskControl_->createTask(task, i);
                     queue_.pop();
+                    QString name = "Отменить поток " + QString::number(buttons_[i]->getNumber());
+                    buttons_[i]->setText(name);
+                    buttons_[i]->setEnabled(true);
                 }
-                QString name = "Поток " + QString::number(buttons_[i]->getNumber()) + " свободен";
-                buttons_[i]->setText(name);
-                buttons_[i]->setEnabled(false);
+                else
+                {
+                    QString name = "Поток " + QString::number(buttons_[i]->getNumber()) + " свободен";
+                    buttons_[i]->setText(name);
+                    buttons_[i]->setEnabled(false);
+                }
             }
-            if (threads[i]->status() == BUSY)
+            if (threads_->at(i)->status() == BUSY)
             {
                 QString name = "Отменить поток " + QString::number(buttons_[i]->getNumber());
                 buttons_[i]->setText(name);
@@ -125,4 +136,6 @@ void MainWindow::timerAlarm()
             }
         }
     }
+    QString text = "Потоков в очереди: " + QString::number(queue_.size());
+    mainwindow_->label_5->setText(text);
 }

@@ -2,9 +2,10 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
-#include <set>
 #include <queue>
 #include <future>
+
+#include "itask_control.h"
 
 class ITaskControl;
 class Button;
@@ -32,9 +33,9 @@ private:
     std::size_t numberThreads_ = 10;
     Ui::MainWindow *mainwindow_ = nullptr;
     std::unique_ptr<ITaskControl> iTaskControl_;
+    std::vector<ITask*> *threads_;
     std::unique_ptr<QTimer> timer_; /// Таймер
-    std::set<std::size_t> idFreeThreads_;
     std::vector<std::shared_ptr<Button>> buttons_;
-    std::queue<std::future<int>> queue_;
+    std::queue<std::tuple<std::packaged_task<int(int, bool&)>, int, Mode>> queue_;
 };
 #endif // MAINWINDOW_H

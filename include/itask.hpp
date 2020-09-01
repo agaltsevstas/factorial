@@ -4,6 +4,8 @@
 #include <vector>
 #include <thread>
 #include <future>
+#include <functional>
+#include <atomic>
 
 #include "logger.h"
 
@@ -27,42 +29,62 @@ public:
     ITask() {}
     ~ITask() {}
     template <typename F>
-    void run(F &function, Mode &mode)
+    void run(F &task)
     {
-        task_ = std::move(function);
-        std::string messageFirst = "Начало вычисления !: ";
-        std::string messageSecond = "Конец вычисления: ";
+        done_ = false;
+        auto &packagedTask = std::get<0>(task);
+        number_ = std::get<1>(task);
+        Mode mode = std::get<2>(task);
+        task_ = packagedTask.get_future();
+        std::string messageFirst = "Начало вычисления " + std::to_string(number_) + "!";
+        std::string messageSecond = "Конец вычисления: " + std::to_string(number_);
         mode == FACTORIAL_1 ? messageSecond += "! = " : (messageFirst += "!",
                                                          messageSecond +="!! = ");
         Logger::info << messageFirst << std::endl;
-        thread_ = std::thread([&]()
+        std::thread([&]()
         {
-            task_.wait_for(std::chrono::seconds(0));
-        });
+            packagedTask(number_, std::ref(isProcess_));
+            done_ = true;
+//            task_.wait_for(std::chrono::seconds(0));
+        }).detach();
+//        result_ = task_.get();
+//        std::thread(std::move(packagedTask), number_, std::ref(isProcess_));
         Logger::info << messageSecond << result_ << std::endl;
+
     }
     void cancel()
     {
-        int k = 0;
+        isProcess_ = false;
+        Logger::info << "Прерывание!" << std::endl;
     }
     Status status()
     {
-        auto status = task_.wait_for(std::chrono::seconds(0));
-        if (status == std::future_status::ready)
+        if (done_)
         {
-            result_ = task_.get();
+//            result_ = task_.get();
             return READY;
         }
         else
         {
             return BUSY;
         }
+//        auto status = task_.wait_for(std::chrono::seconds(0));
+//        if (status == std::future_status::ready)
+//        {
+////            result_ = task_.get();
+//            return READY;
+//        }
+//        else
+//        {
+//            return BUSY;
+//        }
     }
 private:
-    bool isProcess = true;
+    std::atomic<bool> done_;
+    int number_ = 0;
+    bool isProcess_ = true;
     int result_ = 0;
     std::future<int> task_;
-    std::thread thread_;
 };
 
 #endif // ITASK_H

@@ -15,18 +15,16 @@ public:
     ITaskControl(std::size_t number);
     ~ITaskControl();
     template <typename F>
-    void createTask(F &function, std::size_t &index, Mode &&mode)
+    void createTask(F &task, const std::size_t &index)
     {
         if (iTasks_[index] == nullptr)
         {
             iTasks_[index] = new ITask();
         }
-        iTasks_[index]->run(function, mode);
+        iTasks_[index]->run(task);
     }
-    std::vector<ITask*> &getThreads() { return iTasks_; }
+    std::vector<ITask*> *getThreads() { return &iTasks_; }
 private:
-    int number_ = 0;
-//    pthread_mutex_t queueMutex;
     std::vector<ITask*> iTasks_;
 };
 
