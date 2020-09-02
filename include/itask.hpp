@@ -31,37 +31,41 @@ public:
     template <typename F>
     void run(F &task)
     {
-        done_ = false;
-        auto &packagedTask = std::get<0>(task);
+        isDone_ = false;
+        isInterrupt_ = false;
+        packagedTask_ = std::move(std::get<0>(task));
         number_ = std::get<1>(task);
-        Mode mode = std::get<2>(task);
-        task_ = packagedTask.get_future();
+        mode_ = std::get<2>(task);
+        task_ = packagedTask_.get_future();
         std::string messageFirst = "Начало вычисления " + std::to_string(number_) + "!";
-        std::string messageSecond = "Конец вычисления: " + std::to_string(number_);
-        mode == FACTORIAL_1 ? messageSecond += "! = " : (messageFirst += "!",
-                                                         messageSecond +="!! = ");
+        if (mode_ == FACTORIAL_2)
+        {
+            messageFirst += "!";
+        }
         Logger::info << messageFirst << std::endl;
         std::thread([&]()
         {
-            packagedTask(number_, std::ref(isProcess_));
-            done_ = true;
-//            task_.wait_for(std::chrono::seconds(0));
+            Logger::info << "ID потока: " << std::this_thread::get_id() << std::endl;
+            std::move(packagedTask_)(number_, std::ref(isInterrupt_));
+            isDone_ = true;
         }).detach();
-//        result_ = task_.get();
-//        std::thread(std::move(packagedTask), number_, std::ref(isProcess_));
-        Logger::info << messageSecond << result_ << std::endl;
-
     }
     void cancel()
     {
-        isProcess_ = false;
+        isInterrupt_ = true;
         Logger::info << "Прерывание!" << std::endl;
     }
     Status status()
     {
-        if (done_)
+        if (isDone_)
         {
-//            result_ = task_.get();
+            if (task_.valid())
+            {
+                result_ = task_.get();
+                std::string messageSecond = "Конец вычисления: " + std::to_string(number_);
+                            mode_ == FACTORIAL_1 ? messageSecond += "! = " : messageSecond +="!! = ";
+                            Logger::info << messageSecond << result_ << std::endl;
+            }
             return READY;
         }
         else
@@ -71,7 +75,7 @@ public:
 //        auto status = task_.wait_for(std::chrono::seconds(0));
 //        if (status == std::future_status::ready)
 //        {
-////            result_ = task_.get();
+//            result_ = task_.get();
 //            return READY;
 //        }
 //        else
@@ -80,10 +84,12 @@ public:
 //        }
     }
 private:
-    std::atomic<bool> done_;
+    Mode mode_;
+    std::atomic<bool> isDone_;
+    bool isInterrupt_;
     int number_ = 0;
-    bool isProcess_ = true;
-    int result_ = 0;
+    std::atomic<int> result_;
+    std::packaged_task<int(int, bool&)> packagedTask_;
     std::future<int> task_;
 };
 

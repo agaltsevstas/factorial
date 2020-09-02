@@ -64,6 +64,11 @@ SOURCES += \
         src/main.cpp \
         src/main_window.cpp
 
+# Boost
+LIBS += -L/usr/lib/x86_64-linux-gnu \
+        -lboost_filesystem \
+        -lboost_system \
+
 FORMS += \
         forms/main_window.ui
 

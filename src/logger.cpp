@@ -1,4 +1,4 @@
-#include <experimental/filesystem>
+#include <boost/filesystem.hpp>
 #include <iomanip>
 
 #include "logger.h"
@@ -21,15 +21,15 @@ std::string localTime()
 
 void Logger::instance()
 {
-    namespace fs = std::experimental::filesystem;
-    
+    namespace bs = boost::filesystem;
+
     delete logger_; // Очищение указателя на случай двойной инициализации
     logger_ = new Logger;
     debugLevel_ = DEBUG_LEVEL_INFO;
-    
-    fs::path fileName = localTime() + ".log";
-    fs::path directory = "../log/";
-    fs::create_directory(directory); // Проверка на существование каталога. В случае отсутсвия, создается каталог
+
+    bs::path fileName = localTime() + ".log";
+    bs::path directory = "log/";
+    bs::create_directory(directory); // Проверка на существование каталога. В случае отсутсвия, создается каталог
     std::string filePath = directory.string() + fileName.string();
     logFile_.open(filePath);
 }

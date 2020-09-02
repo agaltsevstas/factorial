@@ -27,10 +27,10 @@ private slots:
     void on_button_clicked();
     void on_calculate_1_clicked();
     void on_calculate_2_clicked();
-    void timerAlarm();
+    void taskEnded();
 
 private:
-    std::size_t numberThreads_ = 10;
+    const std::size_t numberThreads_ = 10;
     Ui::MainWindow *mainwindow_ = nullptr;
     std::unique_ptr<ITaskControl> iTaskControl_;
     std::vector<ITask*> *threads_;

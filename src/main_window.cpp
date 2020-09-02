@@ -17,7 +17,7 @@ MainWindow::MainWindow(QWidget *parent)
       buttons_(numberThreads_)
 {
     mainwindow_->setupUi(this);
-    timer_->start(100);
+    timer_->start(0);
     // Добавление кнопок
     for (std::size_t i = 0; i < numberThreads_; ++i)
     {
@@ -26,7 +26,7 @@ MainWindow::MainWindow(QWidget *parent)
         buttons_[i] = button;
         QObject::connect(&*button, &Button::leftClicked, this, &MainWindow::on_button_clicked); // Отслеживание на нажатие кнопки
     }
-    QObject::connect(&*timer_, &QTimer::timeout, this, &MainWindow::timerAlarm);               // Отслеживание таймера на наличие хотя бы 1 связи между модулями
+    QObject::connect(&*timer_, &QTimer::timeout, this, &MainWindow::taskEnded); // Отслеживание таймер
 }
 
 MainWindow::~MainWindow()
@@ -44,10 +44,10 @@ void MainWindow::on_button_clicked()
     threads_->at(number - 1)->cancel();
 }
 
-int factorial(int number, bool &isProcessed)
+int factorial(int number, bool &isInterrupt)
 {
     std::this_thread::sleep_for(std::chrono::milliseconds(500));
-    if (!isProcessed)
+    if (isInterrupt)
     {
         return 1;
     }
@@ -61,16 +61,16 @@ int factorial(int number, bool &isProcessed)
     }
     else
     {
-        int result = factorial(number - 1, isProcessed);
+        int result = factorial(number - 1, isInterrupt);
         Logger::info << "Промежуточный результат: " << result << std::endl;
         return number * result;
     }
 }
 
-int doubleFactorial(int number, bool &isProcessed)
+int doubleFactorial(int number, bool &isInterrupt)
 {
     std::this_thread::sleep_for(std::chrono::milliseconds(500));
-    if (!isProcessed)
+    if (isInterrupt)
     {
         return 1;
     }
@@ -78,24 +78,24 @@ int doubleFactorial(int number, bool &isProcessed)
     {
         return 1;
     }
-    return number * doubleFactorial(number - 2, isProcessed);
+    return number * doubleFactorial(number - 2, isInterrupt);
 }
 
 void MainWindow::on_calculate_1_clicked()
 {
     int number = mainwindow_->lineEdit->text().toInt(); // Число
     std::packaged_task<int(int, bool&)> task(factorial);
-    queue_.push(std::make_tuple(std::move(task), std::move(number), FACTORIAL_1));
+    queue_.push(std::make_tuple(std::move(task), number, FACTORIAL_1));
 }
 
 void MainWindow::on_calculate_2_clicked()
 {
     int number = mainwindow_->lineEdit_2->text().toInt(); // Число
     std::packaged_task<int(int, bool&)> task(doubleFactorial);
-    queue_.push(std::make_tuple(std::move(task), std::move(number), FACTORIAL_2));
+    queue_.push(std::make_tuple(std::move(task), number, FACTORIAL_2));
 }
 
-void MainWindow::timerAlarm()
+void MainWindow::taskEnded()
 {
     for (std::size_t i = 0; i < numberThreads_; ++i)
     {
@@ -110,7 +110,13 @@ void MainWindow::timerAlarm()
         }
         else if (threads_->at(i) != nullptr)
         {
-            if (threads_->at(i)->status() == READY)
+            if (threads_->at(i)->status() == BUSY)
+            {
+                QString name = "Отменить поток " + QString::number(buttons_[i]->getNumber());
+                buttons_[i]->setText(name);
+                buttons_[i]->setEnabled(true);
+            }
+            else if (threads_->at(i)->status() == READY)
             {
                 if (!queue_.empty())
                 {
@@ -128,12 +134,7 @@ void MainWindow::timerAlarm()
                     buttons_[i]->setEnabled(false);
                 }
             }
-            if (threads_->at(i)->status() == BUSY)
-            {
-                QString name = "Отменить поток " + QString::number(buttons_[i]->getNumber());
-                buttons_[i]->setText(name);
-                buttons_[i]->setEnabled(true);
-            }
+
         }
     }
     QString text = "Потоков в очереди: " + QString::number(queue_.size());
