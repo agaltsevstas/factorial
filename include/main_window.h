@@ -33,7 +33,6 @@ private:
     const std::size_t numberThreads_ = 10;
     Ui::MainWindow *mainwindow_ = nullptr;
     std::unique_ptr<ITaskControl> iTaskControl_;
-    std::vector<ITask*> *threads_;
     std::unique_ptr<QTimer> timer_; /// Таймер
     std::vector<std::shared_ptr<Button>> buttons_;
     std::queue<std::tuple<std::packaged_task<int(int, bool&)>, int, Mode>> queue_;

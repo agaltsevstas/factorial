@@ -12,7 +12,6 @@ MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent),
       mainwindow_(new Ui::MainWindow),
       iTaskControl_(new ITaskControl(numberThreads_)),
-      threads_(iTaskControl_->getThreads()),
       timer_ (new QTimer(this)),
       buttons_(numberThreads_)
 {
@@ -26,7 +25,7 @@ MainWindow::MainWindow(QWidget *parent)
         buttons_[i] = button;
         QObject::connect(&*button, &Button::leftClicked, this, &MainWindow::on_button_clicked); // Отслеживание на нажатие кнопки
     }
-    QObject::connect(&*timer_, &QTimer::timeout, this, &MainWindow::taskEnded); // Отслеживание таймер
+    QObject::connect(&*timer_, &QTimer::timeout, this, &MainWindow::taskEnded); // Отслеживание таймера
 }
 
 MainWindow::~MainWindow()
@@ -41,7 +40,7 @@ void MainWindow::on_button_clicked()
     button->setText(name);
     button->setEnabled(false);
     std::size_t number = button->getNumber();
-    threads_->at(number - 1)->cancel();
+    iTaskControl_->cancel(number - 1);
 }
 
 int factorial(int number, bool &isInterrupt)
@@ -97,44 +96,26 @@ void MainWindow::on_calculate_2_clicked()
 
 void MainWindow::taskEnded()
 {
+    auto statuses = iTaskControl_->statuses();
     for (std::size_t i = 0; i < numberThreads_; ++i)
     {
-        if (threads_->at(i) == nullptr && !queue_.empty())
+        if (statuses[i] == READY)
         {
-            auto &task = queue_.front();
-            iTaskControl_->createTask(task, i);
-            queue_.pop();
+            if (!queue_.empty())
+            {
+                auto &task = queue_.front();
+                iTaskControl_->createTask(task, i);
+                queue_.pop();
+            }
+            QString name = "Поток " + QString::number(buttons_[i]->getNumber()) + " свободен";
+            buttons_[i]->setText(name);
+            buttons_[i]->setEnabled(false);
+        }
+        else if (statuses[i] == BUSY)
+        {
             QString name = "Отменить поток " + QString::number(buttons_[i]->getNumber());
             buttons_[i]->setText(name);
             buttons_[i]->setEnabled(true);
-        }
-        else if (threads_->at(i) != nullptr)
-        {
-            if (threads_->at(i)->status() == BUSY)
-            {
-                QString name = "Отменить поток " + QString::number(buttons_[i]->getNumber());
-                buttons_[i]->setText(name);
-                buttons_[i]->setEnabled(true);
-            }
-            else if (threads_->at(i)->status() == READY)
-            {
-                if (!queue_.empty())
-                {
-                    auto &task = queue_.front();
-                    iTaskControl_->createTask(task, i);
-                    queue_.pop();
-                    QString name = "Отменить поток " + QString::number(buttons_[i]->getNumber());
-                    buttons_[i]->setText(name);
-                    buttons_[i]->setEnabled(true);
-                }
-                else
-                {
-                    QString name = "Поток " + QString::number(buttons_[i]->getNumber()) + " свободен";
-                    buttons_[i]->setText(name);
-                    buttons_[i]->setEnabled(false);
-                }
-            }
-
         }
     }
     QString text = "Потоков в очереди: " + QString::number(queue_.size());

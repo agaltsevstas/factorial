@@ -15,15 +15,13 @@ class Button : public QPushButton
 public:
     /**
      * Конструктор
-     * @param module Имя модуля.
+     * @param module Имя потока.
      */
     Button(const std::size_t name, QWidget *parent = nullptr);
     inline std::size_t getNumber() const { return number_; } /// Получение названия.
 
 signals:
-    void rightClicked(); /// Нажатие правой кнопки на мыши.
-    void leftClicked();  /// Нажатие левой кнопки на мыши (не задействованно).
-    void midClicked();   /// Нажатие средней кнопки мыши (не задействованно).
+    void leftClicked();  /// Нажатие левой кнопки на мыши.
 
 protected:    
     void mousePressEvent(QMouseEvent *event) override;

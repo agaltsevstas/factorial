@@ -72,16 +72,6 @@ public:
         {
             return BUSY;
         }
-//        auto status = task_.wait_for(std::chrono::seconds(0));
-//        if (status == std::future_status::ready)
-//        {
-//            result_ = task_.get();
-//            return READY;
-//        }
-//        else
-//        {
-//            return BUSY;
-//        }
     }
 private:
     Mode mode_;

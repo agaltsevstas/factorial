@@ -1,8 +1,6 @@
 #ifndef ITASK_CONTROL_H
 #define ITASK_CONTROL_H
 
-#include <map>
-#include <set>
 #include <vector>
 #include <queue>
 #include <future>
@@ -12,7 +10,7 @@
 class ITaskControl
 {
 public:
-    ITaskControl(std::size_t number);
+    ITaskControl(const std::size_t number);
     ~ITaskControl();
     template <typename F>
     void createTask(F &task, const std::size_t &index)
@@ -23,9 +21,11 @@ public:
         }
         iTasks_[index]->run(task);
     }
-    std::vector<ITask*> *getThreads() { return &iTasks_; }
+    std::vector<Status> statuses();
+    void cancel(const std::size_t index);
 private:
     std::vector<ITask*> iTasks_;
+    std::vector<Status> statuses_;
 };
 
 #endif // ITASK_CONTROL_H
