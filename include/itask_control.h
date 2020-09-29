@@ -7,6 +7,12 @@
 
 #include "itask.hpp"
 
+enum Status
+{
+    READY = 1,
+    BUSY
+};
+
 class ITaskControl
 {
 public:
@@ -15,16 +21,16 @@ public:
     template <typename F>
     void createTask(F &task, const std::size_t &index)
     {
-        if (iTasks_[index] == nullptr)
+        if (!iTasks_[index])
         {
-            iTasks_[index] = new ITask();
+            iTasks_[index] = std::make_shared<ITask>();
         }
         iTasks_[index]->run(task);
     }
     std::vector<Status> statuses();
     void cancel(const std::size_t index);
 private:
-    std::vector<ITask*> iTasks_;
+    std::vector<std::shared_ptr<ITask>> iTasks_;
     std::vector<Status> statuses_;
 };
 

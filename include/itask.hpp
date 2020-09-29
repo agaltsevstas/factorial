@@ -9,19 +9,6 @@
 
 #include "logger.h"
 
-
-enum Status
-{
-    READY = 1,
-    BUSY
-};
-
-enum Mode
-{
-    FACTORIAL_1 = 1,
-    FACTORIAL_2
-};
-
 class ITask
 {
 public:
@@ -31,6 +18,7 @@ public:
     template <typename F>
     void run(F &task)
     {
+        mutex.lock();
         isDone_ = false;
         isInterrupt_ = false;
         packagedTask_ = std::move(std::get<0>(task));
@@ -49,13 +37,14 @@ public:
             std::move(packagedTask_)(number_, std::ref(isInterrupt_));
             isDone_ = true;
         }).detach();
+        mutex.unlock();
     }
     void cancel()
     {
         isInterrupt_ = true;
         Logger::info << "Прерывание!" << std::endl;
     }
-    Status status()
+    bool status()
     {
         if (isDone_)
         {
@@ -66,11 +55,11 @@ public:
                             mode_ == FACTORIAL_1 ? messageSecond += "! = " : messageSecond +="!! = ";
                             Logger::info << messageSecond << result_ << std::endl;
             }
-            return READY;
+            return true;
         }
         else
         {
-            return BUSY;
+            return false;
         }
     }
 private:
@@ -78,9 +67,10 @@ private:
     std::atomic<bool> isDone_;
     bool isInterrupt_;
     int number_ = 0;
-    std::atomic<int> result_;
+    int result_ = 0;
     std::packaged_task<int(int, bool&)> packagedTask_;
     std::future<int> task_;
+    std::mutex mutex;
 };
 
 #endif // ITASK_H

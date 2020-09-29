@@ -6,23 +6,14 @@ ITaskControl::ITaskControl(const std::size_t number) : iTasks_(number), statuses
 
 }
 
-ITaskControl::~ITaskControl()
-{
-    for (auto iTask: iTasks_)
-    {
-        if (iTask != nullptr)
-        {
-            delete iTask;
-        }
-    }
-}
+ITaskControl::~ITaskControl() {}
 
 std::vector<Status> ITaskControl::statuses()
 {
     std::size_t size = iTasks_.size();
     for (std::size_t i = 0; i < size; ++i)
     {
-        statuses_[i] = iTasks_[i] == nullptr ? READY : iTasks_[i]->status() == READY ? READY : BUSY;
+        statuses_[i] = iTasks_[i] ? iTasks_[i]->status() == READY ? READY : BUSY : READY;
     }
     return statuses_;
 }

@@ -42,14 +42,14 @@ cd bin/
 ### ITask
 - ```void run()``` – выполнение задания;
 - ```void cancel()``` – отмена задания;
-- ```Status status()``` – текущее состояние задания.
+- ```bool status()``` – текущее состояние задания.
 Все потоки ITask, хранятся в ITaskControl.
 
 ### ITaskControl
 Пул потоков из ITask
 - ```void createTask(task, i)``` - создание задачи, где task - задача, i - номер задачи в пуле;
 - ```void cancel(index)``` – аналогичный по смыслу одноимённому методу из интерфейса ITask, i - номер задачи в пуле;
-- ```std::vector<Status> statuses()``` – текущее состояние заданий в пуле.
+- ```std::vector<Status> statuses()``` – текущие состояния заданий в пуле.
 
 ### MainWindow
 - ```void taskEnded()``` - завершение/отмена задания.
